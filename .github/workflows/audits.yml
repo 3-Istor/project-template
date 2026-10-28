@@ -1,0 +1,64 @@
+# Monthly audits run by an agent in read-only mode: security, onboarding (a
+# blank agent follows README and AGENTS.md), and drift between specs, ADRs,
+# docs and code. Each opens one issue labelled "audit" for a human to triage.
+# Needs the ANTHROPIC_API_KEY secret; skipped without it.
+name: audits
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+    inputs:
+      audit:
+        description: "security, onboarding, drift or all"
+        default: all
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+jobs:
+  audit:
+    strategy:
+      fail-fast: false
+      matrix:
+        audit: [security, onboarding, drift]
+    if: github.event_name == 'schedule' || inputs.audit == 'all' || contains(fromJSON('["security","onboarding","drift"]'), inputs.audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Skip when no API key or not selected
+        id: go
+        env:
+          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          WANTED: ${{ inputs.audit || 'all' }}
+          THIS: ${{ matrix.audit }}
+        run: |
+          run=false
+          if [ -n "$KEY" ] && { [ "$WANTED" = all ] || [ "$WANTED" = "$THIS" ]; }; then run=true; fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        if: steps.go.outputs.run == 'true'
+        with:
+          fetch-depth: 0
+
+      - name: Make sure the labels exist
+        if: steps.go.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create audit --color 5319E7 --description "Audit planifié" 2>/dev/null || true
+          gh label create "audit:${{ matrix.audit }}" --color D4C5F9 2>/dev/null || true
+
+      - uses: anthropics/claude-code-action@v1
+        if: steps.go.outputs.run == 'true'
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Read .github/audits/${{ matrix.audit }}.md and do what it says.
+          # max-turns caps the spend at a few times a normal run.
+          claude_args: |
+            --max-turns 60
+            --allowedTools "Read,Write,Grep,Glob,Bash(git log:*),Bash(git show:*),Bash(make check),Bash(gh issue list:*),Bash(gh issue create:*)"

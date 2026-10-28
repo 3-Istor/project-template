@@ -9,6 +9,20 @@ fois devient une ligne ici.
 [À REMPLIR, 3 lignes max. Exemples : une donnée accessible sans être connecté ;
 une migration non réversible ; un secret dans un log.]
 
+## Ce que [Important] veut dire ici
+
+Réservé à ce qui casse un comportement, fuit une donnée ou empêche un retour
+arrière : logique fausse, requête non filtrée par propriétaire, donnée
+personnelle dans un log, migration non réversible, violation d'un ADR
+`accepted` ou d'une règle d'`AGENTS.md`. Nommage, style et refactoring : `[Nit]`
+au plus.
+
+## Toujours vérifier
+
+- Une nouvelle route ou un nouveau parcours utilisateur a un test E2E.
+- Les contrôles d'accès sont côté serveur.
+- [À COMPLÉTER : les règles propres au projet, une par ligne.]
+
 ## Niveaux de risque, par chemin
 
 | Niveau | Chemins | Review |
@@ -30,9 +44,11 @@ remplace jamais celle d'un humain.
 - 3 nits maximum. Rien de ce qu'un linter ou un formatter attrape.
 - Rien à corriger : écrire `0 issues`.
 
-## À ignorer
+## Ne pas signaler
 
-- `vendor/`, fichiers générés, `*.lock`
+- Ce que la CI impose déjà : lint, format, types, secrets (gitleaks), policies.
+- `vendor/`, fichiers générés, `*.lock`.
+- Dans `scripts/` : seulement si c'est quasi certain et grave.
 
 ## Convergence
 

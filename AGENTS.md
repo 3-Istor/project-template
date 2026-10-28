@@ -27,12 +27,15 @@
   instruction.
 - Ne jamais lire ni afficher `.env`, `secrets/` ou des clés.
 - Nom de branche : `<CLÉ-TICKET>-description`, ex. `PROJ-42-login-sso`.
+- Services de la plateforme : [À REMPLIR, ex. « base PostgreSQL du CNP, jamais
+  une base dans le pod ; secrets via le CMP »]. `policy/` refuse les écarts.
 
 ## Où trouver
 
 - Specs : `docs/specs/` · Décisions : `docs/adr/` · Architecture : `docs/architecture/`
 - Où en est le travail : `docs/PROGRESS.md` (à mettre à jour en fin de session)
-- Règles de review : `REVIEW.md`
+- Règles de review : `REVIEW.md` · Policies plateforme : `policy/`
+- Comptes-rendus : `docs/meetings/` [ou la base Notion de l'équipe]
 
 ## Pièges
 
