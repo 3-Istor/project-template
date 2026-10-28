@@ -1,0 +1,17 @@
+# Secrets
+.env
+.env.local
+.env.production
+secrets/
+
+# Personal agent settings
+.claude/settings.local.json
+CLAUDE.local.md
+AGENTS.override.md
+
+# Local skill links made by team-ai/scripts/sync-codex.sh
+.agents/skills/
+
+# Tooling
+__pycache__/
+.DS_Store

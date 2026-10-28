@@ -1,0 +1,13 @@
+# Chemins sensibles : une revue humaine obligatoire de leurs owners.
+# Avec la protection de branche "Require review from Code Owners" et
+# "Required approvals: 2", ces chemins demandent toujours 2 humains.
+#
+# Décommenter et remplacer [owner-…] par de vrais @handles ou @3-Istor/<équipe>.
+# Un handle invalide ici fait échouer la règle sans prévenir : vérifier dans
+# l'onglet "Code owners" de GitHub après modification.
+
+# /src/auth/            @[owner-auth] @[owner-2]
+# /.github/workflows/   @[owner-ci] @[owner-2]
+# /infra/               @[owner-ops] @[owner-2]
+# **/migrations/        @[owner-data] @[owner-2]
+# /.claude/             @[owner-ci]
