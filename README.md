@@ -14,13 +14,16 @@ CI. Bouton **Use this template** sur GitHub, puis la checklist ci-dessous.
 | `docs/PROGRESS.md` | Où en est le travail ; point de départ de la session suivante |
 | `.claude/settings.json` | Deny rules (`.env`, secrets, force push), sandbox, hook de rappel doc, plugins team-ai |
 | `.pre-commit-config.yaml` | Format, gitleaks, lint des ADR, nom de branche (pour tous les outils) |
-| `Makefile` | `make check` : la seule commande de vérification |
-| `.github/` | Template de PR, CODEOWNERS, CI, review IA, revue sécurité |
+| `Makefile` | `make check` : la seule commande de vérification, archi en couches comprise (`make arch`) |
+| `policy/` | Règles plateforme vérifiées par conftest sur les manifests Kubernetes |
+| `.github/workflows/` | `ci`, `ai-review`, `security-review`, `platform` (policies + drift d'archi Noodle), `audits` (mensuels) |
+| `.github/audits/` | Consignes des audits planifiés : sécurité, prise en main, dérive specs/code |
+| `.github/` | Template de PR, CODEOWNERS |
 
 ## Checklist après création
 
 1. **`AGENTS.md`** : remplir les `[À REMPLIR]` (projet, commandes).
-2. **`Makefile`** : remplacer `LINT`, `TYPECHECK`, `TEST`, `BUILD` par les vrais outils.
+2. **`Makefile`** : remplacer `LINT`, `TYPECHECK`, `TEST`, `BUILD`, `ARCH` par les vrais outils.
 3. **`REVIEW.md`** : écrire « ce qu'est un échec ici », ajuster les chemins à risque.
 4. **`CODEOWNERS`** : décommenter avec de vrais handles.
 5. **Protection de `main`** (Settings › Branches) : PR obligatoire, checks `ci`
@@ -28,11 +31,24 @@ CI. Bouton **Use this template** sur GitHub, puis la checklist ci-dessous.
    stale approvals », « Require review from Code Owners ».
 6. **Secret `ANTHROPIC_API_KEY`** (repo ou org) pour activer `ai-review` et
    `security-review`. Sans lui, ces jobs sont ignorés.
-7. **Variable `TICKET_PATTERN`** (facultatif) si vos clés de ticket ne sont ni
+7. **Variable `K8S_MANIFESTS`** (si le projet se déploie sur Kubernetes) :
+   dossier de YAML ou chart Helm. Active `policy` (bloquant) et
+   `architecture-drift` (avertissement) ; au premier run, commiter la sortie
+   dans `docs/architecture/discovered/k8s.yaml`.
+8. **Variable `TICKET_PATTERN`** (facultatif) si vos clés de ticket ne sont ni
    `PROJ-42` ni un numéro d'issue.
-8. **Chaque personne**, une fois : `pip install pre-commit && pre-commit install
+9. **Chaque personne**, une fois : `pip install pre-commit && pre-commit install
    --hook-type pre-commit --hook-type pre-push`. Côté Codex :
    `team-ai/scripts/sync-codex.sh .` pour avoir les skills de l'équipe.
+
+## Ce qui tourne tout seul
+
+| Quand | Quoi |
+|---|---|
+| Pendant la session | Hook `Stop` : code changé sans doc touchée → l'agent repart une fois |
+| Commit, push | pre-commit : format, gitleaks, ADR, nom de branche |
+| Chaque PR | `make check`, secrets, nom de branche, policies, drift d'archi, review IA, revue sécurité |
+| Le 1er du mois | Audits sécurité, prise en main, dérive : un ticket `audit` chacun, à trier |
 
 ## Ce qui est imposé, ce qui est conseillé
 

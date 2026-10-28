@@ -1,0 +1,63 @@
+# Platform checks on the Kubernetes manifests, enabled by the repository
+# variable K8S_MANIFESTS (a folder of YAML, or a Helm chart folder). Unset:
+# every job is skipped.
+#   policy: conftest rules in policy/ (blocking).
+#   architecture-drift: noodle discover vs the committed fragment in
+#     docs/architecture/ (warning only until the team makes it required).
+name: platform
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  K8S_MANIFESTS: ${{ vars.K8S_MANIFESTS }}
+  NOODLE_VERSION: c2cf233bd3f829317d4e8ee481e23936e90290ed
+  CONFTEST_IMAGE: openpolicyagent/conftest:v0.70.1
+
+jobs:
+  policy:
+    if: vars.K8S_MANIFESTS != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Render manifests
+        run: scripts/render_manifests.sh "$K8S_MANIFESTS" > "$RUNNER_TEMP/manifests.yaml"
+      - name: conftest
+        run: |
+          docker run --rm -v "$PWD/policy:/policy:ro" -v "$RUNNER_TEMP:/in:ro" \
+            "$CONFTEST_IMAGE" test --policy /policy /in/manifests.yaml
+
+  architecture-drift:
+    if: vars.K8S_MANIFESTS != ''
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Install noodle
+        run: go install "github.com/TheGostsniperfr/Noodle/cmd/noodle@$NOODLE_VERSION"
+      - name: Discover and compare
+        run: |
+          committed=docs/architecture/discovered/k8s.yaml
+          scripts/render_manifests.sh "$K8S_MANIFESTS" \
+            | noodle discover k8s - -o "$RUNNER_TEMP/k8s.yaml" -ref "$GITHUB_SHA"
+          if [ ! -f "$committed" ]; then
+            echo "::warning::No $committed yet. Commit this run's output to start tracking drift:"
+            cat "$RUNNER_TEMP/k8s.yaml"
+            exit 1
+          fi
+          # Provenance (ref, observation time) changes on every run; the rest
+          # only changes when the deployed topology does.
+          if ! diff -u <(grep -v '^provenance:' "$committed") <(grep -v '^provenance:' "$RUNNER_TEMP/k8s.yaml"); then
+            echo "::warning::The manifests no longer match docs/architecture. Rerun discovery, update the diagrams, commit both."
+            exit 1
+          fi
